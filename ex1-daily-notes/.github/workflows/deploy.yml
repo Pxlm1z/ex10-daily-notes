@@ -1,0 +1,37 @@
+name: CI/CD for Backend & Frontend
+
+on:
+  push:
+    branches:
+      - main  # หรือเปลี่ยนเป็น branch ที่คุณใช้
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout source code
+        uses: actions/checkout@v3
+
+      - name: 🔐 Login to Docker Hub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      # ---------- Backend ----------
+      - name: 🐍 Build Backend image
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/flask-backend:latest ./backend
+
+      - name: 📤 Push Backend image
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/flask-backend:latest
+
+      - name: 🚀 Trigger Portainer backend webhook
+        run: curl -X GET "${{ secrets.PORTAINER_WEBHOOK_URL }}"
+
+      # ---------- Frontend ----------
+      - name: 🧱 Build Frontend image
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/nuxt-frontend:latest ./frontend
+
+      - name: 📤 Push Frontend image
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/nuxt-frontend:latest
+
+      - name: 🚀 Trigger Portainer frontend webhook
+        run: curl -X GET "${{ secrets.PORTAINER_WEBHOOK_URL }}"
